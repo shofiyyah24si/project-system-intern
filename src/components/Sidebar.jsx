@@ -92,6 +92,9 @@ export default function Sidebar({ collapsed, onToggle }) {
   const raw  = localStorage.getItem("user");
   const user = raw ? JSON.parse(raw) : null;
   const isAdmin = user?.role === "admin";
+  // handle kolom nama yang mungkin "nama" atau "name"
+  const displayName = user?.nama || user?.name || user?.email || "User";
+  const initial = displayName.charAt(0).toUpperCase();
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -137,22 +140,22 @@ export default function Sidebar({ collapsed, onToggle }) {
           ${collapsed ? "px-2 py-3 flex justify-center" : "px-4 py-3"}`}>
           {collapsed ? (
             <div
-              title={user.nama}
+              title={displayName}
               className="w-9 h-9 rounded-md bg-[#e8eff8] text-[#1d4f91] flex items-center
                 justify-center font-bold text-sm flex-shrink-0"
             >
-              {user.nama?.charAt(0).toUpperCase()}
+              {initial}
             </div>
           ) : (
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-md bg-[#e8eff8] text-[#1d4f91] flex items-center
                 justify-center font-bold text-sm flex-shrink-0">
-                {user.nama?.charAt(0).toUpperCase()}
+                {initial}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-[#1C1D22] truncate">{user.nama}</p>
+                <p className="text-sm font-semibold text-[#1C1D22] truncate">{displayName}</p>
                 <p className="text-xs text-gray-400 truncate">
-                  {isAdmin ? "HSE Admin · Document Control" : "Staff HSE"}
+                  {isAdmin ? "HSE Admin" : "Staff HSE"}
                 </p>
               </div>
             </div>

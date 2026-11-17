@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { LuCircleAlert, LuCircleCheck } from "react-icons/lu";
+import { LuCircleAlert, LuCircleCheck, LuMail, LuLock, LuUser, LuEye, LuEyeOff } from "react-icons/lu";
 import { ImSpinner2 } from "react-icons/im";
 import { userAPI } from "../../services/userAPI";
 
@@ -10,166 +10,143 @@ export default function Register() {
   const [error, setError]       = useState("");
   const [success, setSuccess]   = useState("");
   const [showPass, setShowPass] = useState(false);
-  const [dataForm, setDataForm] = useState({
-    nama: "", email: "", password: "", konfirmasi: "",
-  });
+  const [form, setForm]         = useState({ nama: "", email: "", password: "", konfirmasi: "" });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setDataForm({ ...dataForm, [name]: value });
-  };
+  const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
-
-    // Validasi
-    if (!dataForm.nama || !dataForm.email || !dataForm.password || !dataForm.konfirmasi) {
-      setError("Semua field wajib diisi");
-      return;
+    setError(""); setSuccess("");
+    if (!form.nama || !form.email || !form.password || !form.konfirmasi) {
+      setError("Semua field wajib diisi"); return;
     }
-    if (dataForm.password.length < 6) {
-      setError("Password minimal 6 karakter");
-      return;
-    }
-    if (dataForm.password !== dataForm.konfirmasi) {
-      setError("Password dan konfirmasi password tidak sama");
-      return;
-    }
+    if (form.password.length < 6) { setError("Password minimal 6 karakter"); return; }
+    if (form.password !== form.konfirmasi) { setError("Password dan konfirmasi tidak sama"); return; }
 
     try {
       setLoading(true);
-
-      // Cek duplikat email
-      const emailExists = await userAPI.checkEmailExists(dataForm.email);
-      if (emailExists) {
-        setError("Email sudah terdaftar, gunakan email lain");
-        return;
-      }
-
-      // Simpan ke Supabase
-      await userAPI.registerUser({
-        nama: dataForm.nama,
-        email: dataForm.email,
-        password: dataForm.password,
-      });
-
-      setSuccess("Pendaftaran berhasil! Silakan login.");
-      setDataForm({ nama: "", email: "", password: "", konfirmasi: "" });
-
-      // Redirect ke login setelah 2 detik
+      const exists = await userAPI.checkEmailExists(form.email);
+      if (exists) { setError("Email sudah terdaftar, gunakan email lain"); return; }
+      await userAPI.registerUser({ nama: form.nama, email: form.email, password: form.password });
+      setSuccess("Pendaftaran berhasil! Mengalihkan ke halaman login...");
       setTimeout(() => navigate("/login"), 2000);
-
-    } catch (err) {
+    } catch {
       setError("Terjadi kesalahan. Coba lagi nanti.");
-      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
+  const inputCls = "w-full py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#1d4f91] focus:bg-white focus:ring-2 focus:ring-[#e8eff8] transition disabled:opacity-60";
+
   return (
     <div>
-      <h2 className="text-2xl font-bold text-[#1C1D22] mb-1">
-        Daftar Akun
-      </h2>
-      <p className="text-sm text-gray-400 mb-7">
-        Buat akun baru untuk mengakses sistem
-      </p>
+      {/* Header */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-[#1C1D22] mb-1">Buat Akun</h2>
+        <p className="text-sm text-gray-400">Daftarkan akun baru untuk mengakses sistem</p>
+      </div>
 
-      {/* Error */}
+      {/* Alert */}
       {error && (
-        <div className="bg-red-50 mb-5 p-3 text-sm text-[#CC5F5F] rounded-md flex items-center gap-2 border border-red-100">
-          <LuCircleAlert className="flex-shrink-0" />
-          {error}
+        <div className="bg-red-50 mb-4 px-4 py-3 text-sm text-[#CC5F5F] rounded-xl flex items-center gap-2.5 border border-red-100">
+          <LuCircleAlert size={15} className="flex-shrink-0" /> {error}
         </div>
       )}
-
-      {/* Success */}
       {success && (
-        <div className="bg-green-50 mb-5 p-3 text-sm text-green-700 rounded-md flex items-center gap-2 border border-green-200">
-          <LuCircleCheck className="flex-shrink-0" />
-          {success}
-        </div>
-      )}
-
-      {/* Loading */}
-      {loading && (
-        <div className="bg-[#e8eff8] mb-5 p-3 text-sm text-[#1d4f91] rounded-md flex items-center gap-2">
-          <ImSpinner2 className="animate-spin flex-shrink-0" />
-          Mendaftarkan akun...
+        <div className="bg-green-50 mb-4 px-4 py-3 text-sm text-green-700 rounded-xl flex items-center gap-2.5 border border-green-200">
+          <LuCircleCheck size={15} className="flex-shrink-0" /> {success}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Nama */}
         <div>
-          <label className="block text-sm font-medium text-[#1C1D22] mb-1.5">
-            Nama Lengkap
-          </label>
-          <input type="text" name="nama"
-            value={dataForm.nama} onChange={handleChange} disabled={loading}
-            placeholder="Nama lengkap"
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm outline-none focus:border-[#1d4f91] focus:ring-2 focus:ring-[#e8eff8] transition disabled:opacity-60" />
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Nama Lengkap</label>
+          <div className="relative">
+            <LuUser size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text" value={form.nama} onChange={set("nama")} disabled={loading}
+              placeholder="Nama lengkap Anda"
+              className={`${inputCls} pl-10 pr-4`}
+            />
+          </div>
         </div>
 
         {/* Email */}
         <div>
-          <label className="block text-sm font-medium text-[#1C1D22] mb-1.5">
-            Email
-          </label>
-          <input type="email" name="email"
-            value={dataForm.email} onChange={handleChange} disabled={loading}
-            placeholder="email@contoh.com"
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm outline-none focus:border-[#1d4f91] focus:ring-2 focus:ring-[#e8eff8] transition disabled:opacity-60" />
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Email</label>
+          <div className="relative">
+            <LuMail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="email" value={form.email} onChange={set("email")} disabled={loading}
+              placeholder="email@contoh.com"
+              className={`${inputCls} pl-10 pr-4`}
+            />
+          </div>
         </div>
 
         {/* Password */}
         <div>
-          <label className="block text-sm font-medium text-[#1C1D22] mb-1.5">
-            Password
-          </label>
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Password</label>
           <div className="relative">
+            <LuLock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
-              type={showPass ? "text" : "password"}
-              name="password"
-              value={dataForm.password} onChange={handleChange} disabled={loading}
+              type={showPass ? "text" : "password"} value={form.password} onChange={set("password")} disabled={loading}
               placeholder="Minimal 6 karakter"
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm outline-none focus:border-[#1d4f91] focus:ring-2 focus:ring-[#e8eff8] transition pr-24 disabled:opacity-60" />
-            <button type="button"
-              onClick={() => setShowPass(v => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs">
-              {showPass ? "Sembunyikan" : "Tampilkan"}
+              className={`${inputCls} pl-10 pr-11`}
+            />
+            <button type="button" onClick={() => setShowPass(v => !v)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
+              {showPass ? <LuEyeOff size={16} /> : <LuEye size={16} />}
             </button>
           </div>
         </div>
 
-        {/* Konfirmasi Password */}
+        {/* Konfirmasi */}
         <div>
-          <label className="block text-sm font-medium text-[#1C1D22] mb-1.5">
-            Konfirmasi Password
-          </label>
-          <input
-            type={showPass ? "text" : "password"}
-            name="konfirmasi"
-            value={dataForm.konfirmasi} onChange={handleChange} disabled={loading}
-            placeholder="Ulangi password"
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm outline-none focus:border-[#1d4f91] focus:ring-2 focus:ring-[#e8eff8] transition disabled:opacity-60" />
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Konfirmasi Password</label>
+          <div className="relative">
+            <LuLock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type={showPass ? "text" : "password"} value={form.konfirmasi} onChange={set("konfirmasi")} disabled={loading}
+              placeholder="Ulangi password"
+              className={`${inputCls} pl-10 pr-4`}
+            />
+          </div>
+          {/* Indikator kesesuaian password */}
+          {form.konfirmasi && (
+            <p className={`text-xs mt-1.5 flex items-center gap-1 ${form.password === form.konfirmasi ? "text-green-600" : "text-[#CC5F5F]"}`}>
+              {form.password === form.konfirmasi
+                ? <><LuCircleCheck size={12} /> Password cocok</>
+                : <><LuCircleAlert size={12} /> Password tidak cocok</>
+              }
+            </p>
+          )}
         </div>
 
-        <button type="submit" disabled={loading}
-          className="w-full bg-[#1d4f91] hover:bg-[#17407a] disabled:opacity-60 text-white font-semibold py-2.5 rounded-md transition text-sm mt-2">
-          {loading ? "Mendaftarkan..." : "Daftar Sekarang"}
+        {/* Submit */}
+        <button
+          type="submit" disabled={loading}
+          className="w-full bg-[#1d4f91] hover:bg-[#17407a] active:scale-[0.98] disabled:opacity-60
+            text-white font-semibold py-3 rounded-xl transition-all text-sm flex items-center justify-center gap-2 mt-1"
+        >
+          {loading
+            ? <><ImSpinner2 className="animate-spin" size={16} /> Mendaftarkan...</>
+            : "Daftar Sekarang"
+          }
         </button>
       </form>
 
-      <p className="text-center text-sm text-gray-500 mt-6">
-        Sudah punya akun?{" "}
-        <Link to="/login" className="text-[#1d4f91] font-semibold hover:underline">
-          Masuk di sini
-        </Link>
-      </p>
+      {/* Login link */}
+      <div className="mt-5 pt-5 border-t border-gray-100 text-center">
+        <p className="text-sm text-gray-500">
+          Sudah punya akun?{" "}
+          <Link to="/login" className="text-[#1d4f91] font-semibold hover:underline">
+            Masuk di sini
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
