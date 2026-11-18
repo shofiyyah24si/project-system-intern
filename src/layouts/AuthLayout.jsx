@@ -61,7 +61,7 @@ export default function AuthLayout() {
             </h1>
 
             <p className="text-white/65 text-sm leading-relaxed mb-8 max-w-xs">
-              Platform terintegrasi untuk pengelolaan data manpower, kehadiran safety meeting, dan aset keselamatan kerja di lapangan.
+              Pengelolaan data manpower, kehadiran safety meeting, dan aset keselamatan kerja di lapangan.
             </p>
 
             {/* Feature list */}
