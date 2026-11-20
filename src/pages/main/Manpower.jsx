@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { LuPlus, LuPencil, LuTrash2, LuSearch, LuUpload, LuDownload, LuFileSpreadsheet, LuX, LuCircleAlert } from "react-icons/lu";
 import { manpowerAPI } from "../../services/manpowerAPI";
 import { exportXlsx, readXlsx, uniq } from "../../lib/helpers";
+import { useRole } from "../../lib/useRole";
 import PageHeader from "../../components/PageHeader";
 import AppCard from "../../components/common/AppCard";
 import AppTable from "../../components/common/AppTable";
@@ -26,7 +27,6 @@ const COLS = [
   { key: "status", label: "Status", width: 12 },
 ];
 
-// nama kolom Excel yang dikenali (huruf kecil) → field database
 const ALIAS = {
   nama: ["nama", "name"],
   no_badge: ["no badge", "no. badge", "badge", "no_badge", "nomor badge"],
@@ -47,6 +47,7 @@ function Field({ label, children }) {
 }
 
 export default function Manpower() {
+  const { isViewer } = useRole();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState("");
@@ -156,11 +157,15 @@ export default function Manpower() {
     <div>
       <PageHeader title="Data Manpower" breadcrumb="Manpower">
         <div className="flex flex-wrap gap-2 justify-end">
-          <AppButton type="ghost" onClick={doTemplate}><LuFileSpreadsheet className="inline mr-1" />Template</AppButton>
-          <AppButton type="ghost" onClick={() => fileRef.current?.click()}><LuUpload className="inline mr-1" />Import Excel</AppButton>
           <AppButton type="ghost" onClick={doExport}><LuDownload className="inline mr-1" />Export Excel</AppButton>
-          <AppButton type="primary" onClick={openCreate}><LuPlus className="inline mr-1" />Tambah Manpower</AppButton>
-          <input ref={fileRef} type="file" accept=".xlsx" className="hidden" onChange={doImport} />
+          {!isViewer && (
+            <>
+              <AppButton type="ghost" onClick={doTemplate}><LuFileSpreadsheet className="inline mr-1" />Template</AppButton>
+              <AppButton type="ghost" onClick={() => fileRef.current?.click()}><LuUpload className="inline mr-1" />Import Excel</AppButton>
+              <AppButton type="primary" onClick={openCreate}><LuPlus className="inline mr-1" />Tambah Manpower</AppButton>
+              <input ref={fileRef} type="file" accept=".xlsx" className="hidden" onChange={doImport} />
+            </>
+          )}
         </div>
       </PageHeader>
 
@@ -214,10 +219,12 @@ export default function Manpower() {
                   <td className="px-5 py-3 text-gray-600">{m.area || "-"}</td>
                   <td className="px-5 py-3"><StatusBadge status={m.status} /></td>
                   <td className="px-5 py-3">
-                    <div className="flex gap-1 justify-end">
-                      <button onClick={() => openEdit(m)} aria-label="Edit" className="text-[#1d4f91] hover:bg-[#e8eff8] p-1.5 rounded-md"><LuPencil size={16} /></button>
-                      <button onClick={() => setDeleteItem(m)} aria-label="Hapus" className="text-[#CC5F5F] hover:bg-red-50 p-1.5 rounded-md"><LuTrash2 size={16} /></button>
-                    </div>
+                    {!isViewer && (
+                      <div className="flex gap-1 justify-end">
+                        <button onClick={() => openEdit(m)} aria-label="Edit" className="text-[#1d4f91] hover:bg-[#e8eff8] p-1.5 rounded-md"><LuPencil size={16} /></button>
+                        <button onClick={() => setDeleteItem(m)} aria-label="Hapus" className="text-[#CC5F5F] hover:bg-red-50 p-1.5 rounded-md"><LuTrash2 size={16} /></button>
+                      </div>
+                    )}
                   </td>
                 </AppTableRow>
               ))}

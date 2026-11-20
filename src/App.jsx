@@ -20,14 +20,14 @@ const Login    = React.lazy(() => import("./pages/auth/Login"));
 const Register = React.lazy(() => import("./pages/auth/Register"));
 const Forgot   = React.lazy(() => import("./pages/auth/Forgot"));
 
-// proteksi rute — semua halaman utama butuh login (satu jenis akun: staff HSE)
+// proteksi rute — butuh login
 function PrivateRoute({ children }) {
   const user = localStorage.getItem("user");
   if (!user) return <Navigate to="/login" replace />;
   return children;
 }
 
-// khusus admin — staff biasa tidak boleh akses Manajemen User
+// khusus admin — viewer tidak boleh akses Manajemen User
 function AdminRoute({ children }) {
   const raw = localStorage.getItem("user");
   if (!raw) return <Navigate to="/login" replace />;

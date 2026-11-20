@@ -8,6 +8,7 @@ import {
 import { pgdAPI } from "../../services/pgdAPI";
 import { storageAPI } from "../../services/storageAPI";
 import { exportXlsx, fmtDate, todayISO, calExpInfo } from "../../lib/helpers";
+import { useRole } from "../../lib/useRole";
 import PageHeader from "../../components/PageHeader";
 import AppCard from "../../components/common/AppCard";
 import AppButton from "../../components/common/AppButton";
@@ -347,6 +348,7 @@ function DeleteConfirmModal({ item, onClose, onConfirm }) {
 
 // ── Halaman utama PGD ─────────────────────────────────────────
 export default function PGD() {
+  const { isViewer } = useRole();
   const [items, setItems]               = useState([]);
   const [manpower, setManpower]         = useState([]);
   const [category, setCategory]         = useState(null);
@@ -639,7 +641,9 @@ export default function PGD() {
       <PageHeader title="Personal Gas Detector (PGD)" breadcrumb="PGD">
         <div className="flex gap-2">
           <AppButton type="ghost" onClick={doExport}><LuDownload className="inline mr-1" />Export Excel</AppButton>
-          <AppButton type="primary" onClick={openCreate}><LuPlus className="inline mr-1" />Tambah PGD</AppButton>
+          {!isViewer && (
+            <AppButton type="primary" onClick={openCreate}><LuPlus className="inline mr-1" />Tambah PGD</AppButton>
+          )}
         </div>
       </PageHeader>
 
@@ -767,31 +771,38 @@ export default function PGD() {
                       </td>
                       {/* Aksi */}
                       <td className="px-5 py-3">
-                        <div className="flex gap-1 flex-wrap items-center">
-                          {r.status === "IN" ? (
-                            <button onClick={() => setOutItem(r)} title="Serahkan PGD"
-                              className="bg-amber-400 hover:bg-amber-500 text-white px-2.5 py-1 rounded text-xs font-medium transition">
-                              Out
+                        {!isViewer ? (
+                          <div className="flex gap-1 flex-wrap items-center">
+                            {r.status === "IN" ? (
+                              <button onClick={() => setOutItem(r)} title="Serahkan PGD"
+                                className="bg-amber-400 hover:bg-amber-500 text-white px-2.5 py-1 rounded text-xs font-medium transition">
+                                Out
+                              </button>
+                            ) : (
+                              <button onClick={() => setInItem(r)} title="Kembalikan PGD"
+                                className="bg-green-500 hover:bg-green-600 text-white px-2.5 py-1 rounded text-xs font-medium transition">
+                                In
+                              </button>
+                            )}
+                            <button onClick={() => setHistoryItem(r)} title="Riwayat"
+                              className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded text-xs font-medium transition flex items-center">
+                              <LuHistory size={14} />
                             </button>
-                          ) : (
-                            <button onClick={() => setInItem(r)} title="Kembalikan PGD"
-                              className="bg-green-500 hover:bg-green-600 text-white px-2.5 py-1 rounded text-xs font-medium transition">
-                              In
+                            <button onClick={() => openEdit(r)} title="Edit"
+                              className="bg-[#1d4f91] hover:bg-[#17407a] text-white px-2 py-1 rounded text-xs font-medium transition flex items-center">
+                              <LuPencil size={14} />
                             </button>
-                          )}
+                            <button onClick={() => setDeleteItem(r)} title="Hapus"
+                              className="bg-[#CC5F5F] hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-medium transition flex items-center">
+                              <LuTrash2 size={14} />
+                            </button>
+                          </div>
+                        ) : (
                           <button onClick={() => setHistoryItem(r)} title="Riwayat"
                             className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded text-xs font-medium transition flex items-center">
                             <LuHistory size={14} />
                           </button>
-                          <button onClick={() => openEdit(r)} title="Edit"
-                            className="bg-[#1d4f91] hover:bg-[#17407a] text-white px-2 py-1 rounded text-xs font-medium transition flex items-center">
-                            <LuPencil size={14} />
-                          </button>
-                          <button onClick={() => setDeleteItem(r)} title="Hapus"
-                            className="bg-[#CC5F5F] hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-medium transition flex items-center">
-                            <LuTrash2 size={14} />
-                          </button>
-                        </div>
+                        )}
                       </td>
                     </tr>
                   ))}

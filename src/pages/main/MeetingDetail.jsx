@@ -6,6 +6,7 @@ import {
 } from "react-icons/lu";
 import { meetingAPI } from "../../services/meetingAPI";
 import { exportXlsx } from "../../lib/helpers";
+import { useRole } from "../../lib/useRole";
 import PageHeader from "../../components/PageHeader";
 import AppCard from "../../components/common/AppCard";
 import AppButton from "../../components/common/AppButton";
@@ -18,7 +19,7 @@ function HadirBadge({ status }) {
 }
 
 // ── Satu baris orang ───────────────────────────────────────
-function AttendanceRow({ a, onToggle }) {
+function AttendanceRow({ a, onToggle, isViewer }) {
   return (
     <div className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 transition">
       <div className="min-w-0 flex-1">
@@ -29,23 +30,25 @@ function AttendanceRow({ a, onToggle }) {
       </div>
       <div className="flex items-center gap-2 flex-shrink-0 ml-3">
         <HadirBadge status={a.status_hadir} />
-        <button
-          onClick={() => onToggle(a)}
-          className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition min-w-[90px] ${
-            a.status_hadir === "hadir"
-              ? "bg-red-50 text-[#CC5F5F] hover:bg-red-100"
-              : "bg-[#1d4f91] text-white hover:bg-[#17407a]"
-          }`}
-        >
-          {a.status_hadir === "hadir" ? "Batalkan" : "Tandai Hadir"}
-        </button>
+        {!isViewer && (
+          <button
+            onClick={() => onToggle(a)}
+            className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition min-w-[90px] ${
+              a.status_hadir === "hadir"
+                ? "bg-red-50 text-[#CC5F5F] hover:bg-red-100"
+                : "bg-[#1d4f91] text-white hover:bg-[#17407a]"
+            }`}
+          >
+            {a.status_hadir === "hadir" ? "Batalkan" : "Tandai Hadir"}
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
 // ── Grup per departemen ─────────────────────────────────────
-function DeptGroup({ dept, members, onToggle, onMarkAll }) {
+function DeptGroup({ dept, members, onToggle, onMarkAll, isViewer }) {
   const [open, setOpen] = useState(true);
   const nHadir = members.filter((m) => m.status_hadir === "hadir").length;
   const allHadir = nHadir === members.length;
@@ -65,13 +68,15 @@ function DeptGroup({ dept, members, onToggle, onMarkAll }) {
           <span className="text-xs text-white/80">
             <span className="text-white font-bold">{nHadir}</span>/{members.length} hadir
           </span>
-          <button
-            onClick={(e) => { e.stopPropagation(); onMarkAll(members, !allHadir); }}
-            className="text-xs font-medium px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 text-white flex items-center gap-1 transition"
-          >
-            <LuCheckCheck size={12} />
-            {allHadir ? "Batal Semua" : "Semua Hadir"}
-          </button>
+          {!isViewer && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onMarkAll(members, !allHadir); }}
+              className="text-xs font-medium px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 text-white flex items-center gap-1 transition"
+            >
+              <LuCheckCheck size={12} />
+              {allHadir ? "Batal Semua" : "Semua Hadir"}
+            </button>
+          )}
           {open ? <LuChevronUp size={14} className="text-white/80" /> : <LuChevronDown size={14} className="text-white/80" />}
         </div>
       </div>
@@ -79,7 +84,7 @@ function DeptGroup({ dept, members, onToggle, onMarkAll }) {
       {open && (
         <div className="border border-t-0 border-gray-100 rounded-b-lg divide-y divide-gray-50">
           {members.map((a) => (
-            <AttendanceRow key={a.id} a={a} onToggle={onToggle} />
+            <AttendanceRow key={a.id} a={a} onToggle={onToggle} isViewer={isViewer} />
           ))}
         </div>
       )}
@@ -188,6 +193,7 @@ function RekapTab({ attendance }) {
 export default function MeetingDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isViewer } = useRole();
   const [session, setSession]       = useState(null);
   const [attendance, setAttendance] = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -436,6 +442,7 @@ export default function MeetingDetail() {
                     members={members}
                     onToggle={toggleHadir}
                     onMarkAll={markAll}
+                    isViewer={isViewer}
                   />
                 ))}
               </div>
@@ -443,7 +450,7 @@ export default function MeetingDetail() {
               /* Mode list (saat search/filter aktif) */
               <div className="divide-y divide-gray-50">
                 {filtered.map((a) => (
-                  <AttendanceRow key={a.id} a={a} onToggle={toggleHadir} />
+                  <AttendanceRow key={a.id} a={a} onToggle={toggleHadir} isViewer={isViewer} />
                 ))}
                 {filtered.length === 0 && (
                   <p className="py-8 text-center text-gray-400 text-sm">Tidak ada data yang cocok</p>

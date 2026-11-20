@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { LuPlus, LuPencil, LuTrash2, LuSearch, LuDownload, LuChevronDown, LuChevronUp } from "react-icons/lu";
 import { assetAPI } from "../../services/assetAPI";
 import { exportXlsx, fmtDate, daysUntil, todayISO } from "../../lib/helpers";
+import { useRole } from "../../lib/useRole";
 import PageHeader from "../../components/PageHeader";
 import AppCard from "../../components/common/AppCard";
 import AppTable from "../../components/common/AppTable";
@@ -39,6 +40,7 @@ const Field = ({ label, children }) => (
 );
 
 export default function KartuPengemudi() {
+  const { isViewer } = useRole();
   const [items, setItems] = useState([]);
   const [manpower, setManpower] = useState([]);
   const [category, setCategory] = useState(null);
@@ -149,7 +151,9 @@ export default function KartuPengemudi() {
       <PageHeader title="Kartu Pengemudi (KP)" breadcrumb="Kartu Pengemudi">
         <div className="flex gap-2">
           <AppButton type="ghost" onClick={doExport}><LuDownload className="inline mr-1" />Export Excel</AppButton>
-          <AppButton type="primary" onClick={openCreate}><LuPlus className="inline mr-1" />Catat KP</AppButton>
+          {!isViewer && (
+            <AppButton type="primary" onClick={openCreate}><LuPlus className="inline mr-1" />Catat KP</AppButton>
+          )}
         </div>
       </PageHeader>
 
@@ -229,12 +233,14 @@ export default function KartuPengemudi() {
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${r.permit.styles}`}>{r.permit.label}</span>
                       </td>
                       <td className="px-5 py-3">
-                        <div className="flex gap-1 justify-end">
-                          <button onClick={() => openEdit(r)} aria-label="Edit"
-                            className="text-[#1d4f91] hover:bg-[#e8eff8] p-1.5 rounded-md"><LuPencil size={16} /></button>
-                          <button onClick={() => setDeleteItem(r)} aria-label="Hapus"
-                            className="text-[#CC5F5F] hover:bg-red-50 p-1.5 rounded-md"><LuTrash2 size={16} /></button>
-                        </div>
+                        {!isViewer && (
+                          <div className="flex gap-1 justify-end">
+                            <button onClick={() => openEdit(r)} aria-label="Edit"
+                              className="text-[#1d4f91] hover:bg-[#e8eff8] p-1.5 rounded-md"><LuPencil size={16} /></button>
+                            <button onClick={() => setDeleteItem(r)} aria-label="Hapus"
+                              className="text-[#CC5F5F] hover:bg-red-50 p-1.5 rounded-md"><LuTrash2 size={16} /></button>
+                          </div>
+                        )}
                       </td>
                     </AppTableRow>
                   );

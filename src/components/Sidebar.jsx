@@ -91,7 +91,8 @@ export default function Sidebar({ collapsed, onToggle }) {
 
   const raw  = localStorage.getItem("user");
   const user = raw ? JSON.parse(raw) : null;
-  const isAdmin = user?.role === "admin";
+  const isAdmin  = user?.role === "admin";
+  const isViewer = user?.role === "viewer";
   // handle kolom nama yang mungkin "nama" atau "name"
   const displayName = user?.nama || user?.name || user?.email || "User";
   const initial = displayName.charAt(0).toUpperCase();
@@ -155,7 +156,7 @@ export default function Sidebar({ collapsed, onToggle }) {
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-[#1C1D22] truncate">{displayName}</p>
                 <p className="text-xs text-gray-400 truncate">
-                  {isAdmin ? "HSE Admin" : "Staff HSE"}
+                  {isAdmin ? "HSE Admin" : "Viewer"}
                 </p>
               </div>
             </div>

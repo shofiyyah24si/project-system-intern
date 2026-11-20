@@ -5,6 +5,7 @@ import {
   LuCalendar, LuMapPin, LuCircleAlert, LuX,
 } from "react-icons/lu";
 import { meetingAPI } from "../../services/meetingAPI";
+import { useRole } from "../../lib/useRole";
 import PageHeader from "../../components/PageHeader";
 import AppCard from "../../components/common/AppCard";
 import AppButton from "../../components/common/AppButton";
@@ -154,6 +155,7 @@ function agendasDisplay(keterangan) {
 // ── Halaman utama ───────────────────────────────────────────
 export default function MeetingSessions() {
   const navigate = useNavigate();
+  const { isViewer } = useRole();
   const [sessions, setSessions]     = useState([]);
   const [loading, setLoading]       = useState(true);
 
@@ -230,9 +232,11 @@ export default function MeetingSessions() {
   return (
     <div>
       <PageHeader title="Kehadiran Weekly Meeting" breadcrumb="Kehadiran Meeting">
-        <AppButton type="primary" onClick={openCreate}>
-          <LuPlus className="inline mr-1" /> Buat Sesi Baru
-        </AppButton>
+        {!isViewer && (
+          <AppButton type="primary" onClick={openCreate}>
+            <LuPlus className="inline mr-1" /> Buat Sesi Baru
+          </AppButton>
+        )}
       </PageHeader>
 
       <div className="mx-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -284,23 +288,17 @@ export default function MeetingSessions() {
                   )}
                 </div>
 
-                {/* Aksi */}
-                <div className="flex flex-col gap-1 flex-shrink-0">
-                  <button
-                    onClick={(e) => openEdit(e, s)}
-                    className="text-[#1d4f91] hover:bg-[#e8eff8] p-1.5 rounded-lg"
-                    title="Edit sesi"
-                  >
-                    <LuPencil size={15} />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setDeleteItem(s); }}
-                    className="text-[#CC5F5F] hover:bg-red-50 p-1.5 rounded-lg"
-                    title="Hapus sesi"
-                  >
-                    <LuTrash2 size={15} />
-                  </button>
-                </div>
+                {/* Aksi edit/hapus — hanya admin */}
+                {!isViewer && (
+                  <div className="flex flex-col gap-1 flex-shrink-0">
+                    <button onClick={(e) => openEdit(e, s)} className="text-[#1d4f91] hover:bg-[#e8eff8] p-1.5 rounded-lg" title="Edit sesi">
+                      <LuPencil size={15} />
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); setDeleteItem(s); }} className="text-[#CC5F5F] hover:bg-red-50 p-1.5 rounded-lg" title="Hapus sesi">
+                      <LuTrash2 size={15} />
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-1 mt-3 text-xs text-[#1d4f91] font-medium border-t border-gray-50 pt-2.5">

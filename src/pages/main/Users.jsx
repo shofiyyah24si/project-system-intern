@@ -16,9 +16,9 @@ import {
   DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 
-const ROLE_OPTIONS = ["staff", "admin"];
+const ROLE_OPTIONS = ["viewer", "admin"];
 
-const emptyForm = { nama: "", email: "", password: "", role: "staff" };
+const emptyForm = { nama: "", email: "", password: "", role: "viewer" };
 
 export default function Users() {
   const [users, setUsers]         = useState([]);

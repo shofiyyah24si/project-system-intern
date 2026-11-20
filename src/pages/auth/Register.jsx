@@ -27,7 +27,7 @@ export default function Register() {
       setLoading(true);
       const exists = await userAPI.checkEmailExists(form.email);
       if (exists) { setError("Email sudah terdaftar, gunakan email lain"); return; }
-      await userAPI.registerUser({ nama: form.nama, email: form.email, password: form.password });
+      await userAPI.registerUser({ nama: form.nama, email: form.email, password: form.password, role: "viewer" });
       setSuccess("Pendaftaran berhasil! Mengalihkan ke halaman login...");
       setTimeout(() => navigate("/login"), 2000);
     } catch {
@@ -44,7 +44,7 @@ export default function Register() {
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-[#1C1D22] mb-1">Buat Akun</h2>
-        <p className="text-sm text-gray-400">Daftarkan akun baru untuk mengakses sistem</p>
+        <p className="text-sm text-gray-400">Akun baru akan terdaftar sebagai <span className="font-medium text-[#1d4f91]">Viewer</span> — hanya bisa melihat data</p>
       </div>
 
       {/* Alert */}
