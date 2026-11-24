@@ -240,28 +240,115 @@ function CheckInModal({ item, onClose, onDone }) {
   );
 }
 
+// ── Modal Tambah Riwayat Manual ────────────────────────────
+function AddHistoryModal({ item, manpower, onClose, onDone }) {
+  const [form, setForm] = useState({ jenis: "out", tanggal: todayISO(), manpowerId: "", keterangan: "" });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const user = (() => { try { return JSON.parse(localStorage.getItem("user")); } catch { return null; } })();
+
+  const handleSubmit = async () => {
+    if (!form.tanggal) { setError("Tanggal wajib diisi"); return; }
+    setSaving(true); setError("");
+    try {
+      await pgdAPI.insertHistory(item.id, {
+        jenis: form.jenis,
+        tanggal: form.tanggal,
+        manpowerId: form.manpowerId ? Number(form.manpowerId) : null,
+        keterangan: form.keterangan.trim() || null,
+        userName: user?.nama || null,
+      });
+      onDone();
+    } catch (e) {
+      setError(e.response?.data?.message || "Gagal menyimpan.");
+      setSaving(false);
+    }
+  };
+
+  return (
+    <AppModal show onClose={onClose}>
+      <h3 className="text-base font-semibold mb-1">Tambah Riwayat Manual</h3>
+      <p className="text-xs text-gray-400 mb-3">PGD {item.kode_item} — tidak mengubah status saat ini</p>
+      {error && <p className="text-sm text-[#CC5F5F] bg-red-50 rounded p-2.5 mb-3">{error}</p>}
+      <div className="space-y-3">
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">Jenis *</label>
+          <div className="flex gap-3">
+            {["out", "in"].map((j) => (
+              <button key={j} type="button"
+                onClick={() => setForm({ ...form, jenis: j })}
+                className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition ${
+                  form.jenis === j
+                    ? j === "out" ? "bg-amber-400 text-white border-amber-400" : "bg-green-500 text-white border-green-500"
+                    : "bg-white text-gray-500 border-gray-200 hover:border-gray-400"
+                }`}>
+                {j === "out" ? "Diserahkan (OUT)" : "Dikembalikan (IN)"}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">Tanggal *</label>
+          <input type="date" value={form.tanggal}
+            onChange={(e) => setForm({ ...form, tanggal: e.target.value })}
+            className="w-full border border-gray-200 rounded-md p-2.5 text-sm outline-none focus:border-[#1d4f91]" />
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">Manpower (opsional)</label>
+          <AppSelect className="w-full" value={form.manpowerId}
+            onChange={(e) => setForm({ ...form, manpowerId: e.target.value })}>
+            <option value="">Pilih manpower...</option>
+            {manpower.map((m) => <option key={m.id} value={m.id}>{m.nama} ({m.no_badge})</option>)}
+          </AppSelect>
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">Keterangan (opsional)</label>
+          <input type="text" value={form.keterangan}
+            onChange={(e) => setForm({ ...form, keterangan: e.target.value })}
+            placeholder="mis. Dikembalikan pak Yuhendri"
+            className="w-full border border-gray-200 rounded-md p-2.5 text-sm outline-none focus:border-[#1d4f91]" />
+        </div>
+      </div>
+      <FormActions onCancel={onClose} onSubmit={handleSubmit}
+        submitLabel={saving ? "Menyimpan..." : "Simpan"} disabled={saving} />
+    </AppModal>
+  );
+}
+
 // ── Modal Riwayat ───────────────────────────────────────────
-function HistoryModal({ item, onClose }) {
+function HistoryModal({ item, manpower, onClose }) {
   const [log, setLog] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const { isViewer } = useRole();
 
-  useEffect(() => {
+  const load = () => {
     if (!item) return;
     setLoading(true);
     pgdAPI.fetchActivityLog(item.id)
       .then(setLog).catch(console.error).finally(() => setLoading(false));
-  }, [item]);
+  };
+
+  useEffect(() => { load(); }, [item]);
 
   if (!item) return null;
 
   return (
     <AppModal show onClose={onClose}>
-      <div className="flex items-center gap-2 mb-4">
-        <LuHistory className="text-[#1d4f91] text-lg flex-shrink-0" />
-        <div>
-          <h3 className="text-base font-semibold text-[#1C1D22]">Riwayat &mdash; PGD {item.kode_item}</h3>
-          <p className="text-xs text-gray-400">Semua aktivitas terkait PGD ini</p>
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-2">
+          <LuHistory className="text-[#1d4f91] text-lg flex-shrink-0" />
+          <div>
+            <h3 className="text-base font-semibold text-[#1C1D22]">Riwayat &mdash; PGD {item.kode_item}</h3>
+            <p className="text-xs text-gray-400">Semua aktivitas terkait PGD ini</p>
+          </div>
         </div>
+        {!isViewer && (
+          <button onClick={() => setShowAdd(true)}
+            className="flex items-center gap-1 text-xs font-semibold text-[#1d4f91] bg-[#e8eff8] hover:bg-[#d0e1f5] px-2.5 py-1.5 rounded-lg transition flex-shrink-0">
+            <LuPlus size={13} /> Tambah
+          </button>
+        )}
       </div>
       {loading ? (
         <div className="flex items-center justify-center gap-2 py-10 text-[#1d4f91] text-sm">
@@ -304,7 +391,7 @@ function HistoryModal({ item, onClose }) {
                       <LuFileText size={11} /> Sertifikat PDF
                     </a>
                   )}
-                  {entry.user && <p className="text-xs text-gray-400 mt-0.5">Oleh: {entry.user}</p>}
+                  {entry.user && <p className="text-xs text-gray-400 mt-0.5">Dicatat oleh: {entry.user}</p>}
                 </div>
               </div>
             );
@@ -314,6 +401,14 @@ function HistoryModal({ item, onClose }) {
       <div className="mt-4 flex justify-end">
         <AppButton type="ghost" onClick={onClose}>Tutup</AppButton>
       </div>
+      {showAdd && (
+        <AddHistoryModal
+          item={item}
+          manpower={manpower}
+          onClose={() => setShowAdd(false)}
+          onDone={() => { setShowAdd(false); load(); }}
+        />
+      )}
     </AppModal>
   );
 }
@@ -745,7 +840,16 @@ export default function PGD() {
                         <p className="text-xs text-gray-400">{r.holder?.nama || ""}</p>
                       </td>
                       {/* Date Out */}
-                      <td className="px-5 py-3 text-gray-600 text-sm whitespace-nowrap">{fmtDate(r.date_out)}</td>
+                      <td className="px-5 py-3 text-sm whitespace-nowrap">
+                        <p className="text-gray-600">{fmtDate(r.date_out) || "-"}</p>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                          r.status === "OUT"
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-green-100 text-green-600"
+                        }`}>
+                          {r.status === "OUT" ? "Sedang dipakai" : "Tersedia"}
+                        </span>
+                      </td>
                       {/* Date Calibration */}
                       <td className="px-5 py-3 text-gray-600 text-sm whitespace-nowrap">{fmtDate(r.tgl_kalibrasi)}</td>
                       {/* Next Calibration */}
@@ -919,7 +1023,7 @@ export default function PGD() {
           onClose={() => setInItem(null)}
           onDone={() => { setInItem(null); load(); }} />
       )}
-      {historyItem && <HistoryModal item={historyItem} onClose={() => setHistoryItem(null)} />}
+      {historyItem && <HistoryModal item={historyItem} manpower={manpower} onClose={() => setHistoryItem(null)} />}
       {deleteItem && (
         <DeleteConfirmModal
           item={deleteItem}

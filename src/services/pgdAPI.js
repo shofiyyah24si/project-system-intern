@@ -25,15 +25,29 @@ export const pgdAPI = {
     const cat = cats.data[0];
     if (!cat) return { category: null, manpower: mpRes.data, items: [] };
 
-    const res = await axios.get(
-      `${ITEM_URL}?asset_category_id=eq.${cat.id}&order=kode_item.asc`,
-      { headers }
-    );
+    const [res, txRes] = await Promise.all([
+      axios.get(`${ITEM_URL}?asset_category_id=eq.${cat.id}&order=kode_item.asc`, { headers }),
+      axios.get(`${TX_URL}?jenis_transaksi=eq.out&select=asset_item_id,tanggal_transaksi&order=tanggal_transaksi.desc`, { headers }),
+    ]);
+
     const mpMap = Object.fromEntries(mpRes.data.map((m) => [m.id, m]));
+
+    // ambil tanggal_out terakhir per item dari asset_transaction
+    const lastOutMap = {};
+    txRes.data.forEach((tx) => {
+      if (!lastOutMap[tx.asset_item_id]) {
+        lastOutMap[tx.asset_item_id] = tx.tanggal_transaksi;
+      }
+    });
+
     return {
       category: cat,
       manpower: mpRes.data,
-      items: res.data.map((i) => ({ ...i, holder: mpMap[i.manpower_id] || null })),
+      items: res.data.map((i) => ({
+        ...i,
+        holder: mpMap[i.manpower_id] || null,
+        date_out: i.status === "OUT" ? (lastOutMap[i.id] || i.date_out || null) : null,
+      })),
     };
   },
 
@@ -48,7 +62,6 @@ export const pgdAPI = {
     return { ...item, holder: mpMap[item.manpower_id] || null };
   },
 
-  // excludeId: skip item yg sedang diedit
   async checkDuplicate(serialNumber, excludeId = null) {
     const sn = serialNumber.trim();
     if (!sn) return false;
@@ -123,6 +136,24 @@ export const pgdAPI = {
       tanggal_ambil: null,
     }, { headers: writeHeaders });
     await this.logActivity(id, "in", `Dikembalikan${notes ? ` — ${notes}` : ""}`, user);
+  },
+
+  // Insert riwayat historis tanpa mengubah status asset_item
+  async insertHistory(itemId, { jenis, tanggal, manpowerId = null, keterangan = null, userName = null }) {
+    const user = userName || currentUser()?.nama || null;
+    // insert ke asset_transaction
+    const txPayload = {
+      asset_item_id: itemId,
+      jenis_transaksi: jenis, // "in" atau "out"
+      tanggal_transaksi: tanggal,
+      keterangan: keterangan || null,
+      ditandai_oleh: user,
+    };
+    if (jenis === "in") txPayload.tanggal_kembali = tanggal;
+    if (manpowerId) txPayload.manpower_id = manpowerId;
+    await axios.post(TX_URL, txPayload, { headers: writeHeaders });
+    // insert ke activity log
+    await this.logActivity(itemId, jenis, keterangan, user);
   },
 
   async logActivity(itemId, jenisAksi, keterangan = null, userName = null) {
