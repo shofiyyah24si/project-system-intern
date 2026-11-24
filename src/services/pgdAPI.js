@@ -87,14 +87,15 @@ export const pgdAPI = {
 
   async checkOut(id, { date, manpowerId = null, notes = "", userName = null }) {
     const user = userName || currentUser()?.nama || null;
-    await axios.post(TX_URL, {
+    const txPayload = {
       asset_item_id: id,
-      manpower_id: manpowerId || null,
       jenis_transaksi: "out",
       tanggal_transaksi: date,
       keterangan: notes || null,
       ditandai_oleh: user,
-    }, { headers: writeHeaders });
+    };
+    if (manpowerId) txPayload.manpower_id = manpowerId;
+    await axios.post(TX_URL, txPayload, { headers: writeHeaders });
     await axios.patch(`${ITEM_URL}?id=eq.${id}`, {
       status: "OUT",
       date_out: date,
@@ -106,15 +107,17 @@ export const pgdAPI = {
 
   async checkIn(id, { date, manpowerId = null, notes = "", userName = null }) {
     const user = userName || currentUser()?.nama || null;
-    await axios.post(TX_URL, {
+    // hanya insert transaction jika ada manpower_id
+    const txPayload = {
       asset_item_id: id,
-      manpower_id: manpowerId || null,
       jenis_transaksi: "in",
       tanggal_transaksi: date,
       tanggal_kembali: date,
       keterangan: notes || null,
       ditandai_oleh: user,
-    }, { headers: writeHeaders });
+    };
+    if (manpowerId) txPayload.manpower_id = manpowerId;
+    await axios.post(TX_URL, txPayload, { headers: writeHeaders });
     await axios.patch(`${ITEM_URL}?id=eq.${id}`, {
       status: "IN",
       tanggal_ambil: null,
